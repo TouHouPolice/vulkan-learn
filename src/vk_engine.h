@@ -51,6 +51,32 @@ struct DeletionQueue
 	}
 };
 
+struct GPUCameraData
+{
+	glm::mat4 view;
+	glm::mat4 proj;
+	glm::mat4 viewProj;
+};
+
+
+struct FrameData
+{
+	VkFence _renderFence;
+
+	VkSemaphore _presentSemaphore;
+	VkSemaphore _renderSemaphore;
+
+	VkCommandPool _commandPool;
+	VkCommandBuffer _mainCommandBuffer;
+
+	//buffer that holds a single GPUCameraData to use when rendering
+	AllocatedBuffer _cameraBuffer;
+	VkDescriptorSet _globalDescriptorSet;
+};
+
+
+constexpr unsigned int FRAME_OVERLAP = 2;
+
 class VulkanEngine {
 public:
 
@@ -82,18 +108,13 @@ public:
 	VkQueue _graphicsQueue; //queue we will submit to
 	uint32_t _graphicsQueueFamily; //family of that queue
 
-	VkCommandPool _commandPool; //the command pool for our commands
-	VkCommandBuffer _mainCommandBuffer; //the buffer we will record into
-
 	VkRenderPass _renderPass;
 	std::vector<VkFramebuffer> _framebuffers;
 
 
-	VkSemaphore _presentSemaphore, _renderSemaphore;
-	VkFence _renderFence;
-
-
 private:
+	FrameData _frames[FRAME_OVERLAP];
+
 	int _selectedShader{ 0 };
 	DeletionQueue _mainDeletionQueue;
 	VmaAllocator _allocator;
@@ -109,6 +130,9 @@ private:
 
 	std::unordered_map<std::string, Material> _materials;
 	std::unordered_map<std::string, Mesh> _meshes;
+
+	VkDescriptorSetLayout _globalSetLayout;
+	VkDescriptorPool _descriptorPool;
 private:
 	void init_vulkan();
 	void init_swapchain();
@@ -134,6 +158,11 @@ private:
 
 	//our draw function
 	void draw_objects(VkCommandBuffer cmd, RenderObject* first, int count);
+
+	FrameData& get_current_frame();
+
+	AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+	void init_descriptors();
 public:
 	//initializes everything in the engine
 	void init();
