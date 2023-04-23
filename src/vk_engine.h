@@ -58,6 +58,17 @@ struct GPUCameraData
 	glm::mat4 viewProj;
 };
 
+struct GPUSceneData {
+	glm::vec4 fogColor; // w is for exponent
+	glm::vec4 fogDistances; //x for min, y for max, zw unused.
+	glm::vec4 ambientColor;
+	glm::vec4 sunlightDirection; //w for sun power
+	glm::vec4 sunlightColor;
+};
+
+struct GPUObjectData {
+	glm::mat4 modelMatrix;
+};
 
 struct FrameData
 {
@@ -72,6 +83,9 @@ struct FrameData
 	//buffer that holds a single GPUCameraData to use when rendering
 	AllocatedBuffer _cameraBuffer;
 	VkDescriptorSet _globalDescriptorSet;
+
+	AllocatedBuffer _objectBuffer;
+	VkDescriptorSet _objectDescriptor;
 };
 
 
@@ -132,7 +146,14 @@ private:
 	std::unordered_map<std::string, Mesh> _meshes;
 
 	VkDescriptorSetLayout _globalSetLayout;
+	VkDescriptorSetLayout _objectSetLayout;
+
 	VkDescriptorPool _descriptorPool;
+
+	VkPhysicalDeviceProperties _gpuProperties;
+
+	GPUSceneData _sceneParameters;
+	AllocatedBuffer _sceneParameterBuffer;
 private:
 	void init_vulkan();
 	void init_swapchain();
@@ -163,6 +184,8 @@ private:
 
 	AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 	void init_descriptors();
+
+	size_t pad_uniform_buffer_size(size_t originalSize);
 public:
 	//initializes everything in the engine
 	void init();
