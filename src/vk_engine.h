@@ -88,6 +88,13 @@ struct FrameData
 	VkDescriptorSet _objectDescriptor;
 };
 
+struct UploadContext {
+	VkFence _uploadFence;
+	VkCommandPool _commandPool;
+	VkCommandBuffer _commandBuffer;
+};
+
+
 
 constexpr unsigned int FRAME_OVERLAP = 2;
 
@@ -125,6 +132,9 @@ public:
 	VkRenderPass _renderPass;
 	std::vector<VkFramebuffer> _framebuffers;
 
+	UploadContext _uploadContext;
+	void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function);
+
 
 private:
 	FrameData _frames[FRAME_OVERLAP];
@@ -154,6 +164,8 @@ private:
 
 	GPUSceneData _sceneParameters;
 	AllocatedBuffer _sceneParameterBuffer;
+
+	
 private:
 	void init_vulkan();
 	void init_swapchain();
@@ -186,6 +198,8 @@ private:
 	void init_descriptors();
 
 	size_t pad_uniform_buffer_size(size_t originalSize);
+
+	
 public:
 	//initializes everything in the engine
 	void init();
