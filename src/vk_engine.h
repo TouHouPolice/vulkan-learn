@@ -14,6 +14,7 @@
 
 struct Material
 {
+	VkDescriptorSet textureSet{ VK_NULL_HANDLE }; //texture defaulted to null
 	VkPipeline pipeline;
 	VkPipelineLayout pipelineLayout;
 };
@@ -94,6 +95,11 @@ struct UploadContext {
 	VkCommandBuffer _commandBuffer;
 };
 
+struct Texture
+{
+	AllocatedImage image;
+	VkImageView imageView;
+};
 
 
 constexpr unsigned int FRAME_OVERLAP = 2;
@@ -133,18 +139,22 @@ public:
 	std::vector<VkFramebuffer> _framebuffers;
 
 	UploadContext _uploadContext;
-	void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function);
 
+	DeletionQueue _mainDeletionQueue;
+
+	VmaAllocator _allocator;
+
+	std::unordered_map<std::string, Texture> _loadedTextures;
 
 private:
 	FrameData _frames[FRAME_OVERLAP];
 
 	int _selectedShader{ 0 };
-	DeletionQueue _mainDeletionQueue;
-	VmaAllocator _allocator;
+	
 
 	VkPipeline _meshPipeline;
 	VkPipelineLayout _meshPipelineLayout;
+	VkPipelineLayout texturedPipeLayout;
 
 	AllocatedImage _depthImage;
 	VkImageView _depthImageView;
@@ -157,6 +167,7 @@ private:
 
 	VkDescriptorSetLayout _globalSetLayout;
 	VkDescriptorSetLayout _objectSetLayout;
+	VkDescriptorSetLayout _singleTextureSetLayout;
 
 	VkDescriptorPool _descriptorPool;
 
@@ -194,11 +205,12 @@ private:
 
 	FrameData& get_current_frame();
 
-	AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+	
 	void init_descriptors();
 
 	size_t pad_uniform_buffer_size(size_t originalSize);
 
+	
 	
 public:
 	//initializes everything in the engine
@@ -212,6 +224,12 @@ public:
 
 	//run main loop
 	void run();
+
+	AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+
+	void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function);
+
+	void load_images();
 };
 
 class PipelineBuilder
